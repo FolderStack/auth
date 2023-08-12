@@ -1,0 +1,12 @@
+[
+    {
+        "PK": "OrgID#test",
+        "SK": "OAuthConfig",
+        "entityType": "OAuthConfig",
+        "endpoint": "https://test.whitepeak.digital/oauth/authorize",
+        "clientId": "2wKwRXFPhCHF0opHkIDLUo4d9UMV4vpJgV6dcCXx",
+        "jwks": "https://test.whitepeak.digital?well-known=jwks",
+        "issuer": "",
+        "audience": ""
+    }
+]

@@ -1,0 +1,23 @@
+token:
+  handler: ./src/handlers/token.handler
+  events:
+    - http:
+        method: POST
+        path: /oauth/token
+        cors: true
+
+authorize:
+  handler: ./src/handlers/authorize.handler
+  events: 
+    - http:
+        method: GET
+        path: /oauth/authorize
+        cors: true
+
+errorPage:
+  handler: ./src/handlers/error-page.handler
+  events:
+    - http:
+        method: GET
+        path: /auth/error
+        cors: true
