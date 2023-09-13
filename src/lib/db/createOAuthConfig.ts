@@ -5,17 +5,24 @@ import { config } from '@config';
 
 export async function createOAuthConfig(
     orgId: string,
-    endpoint: string,
-    clientId: string
+    hostName: string,
+    authorizeEndpoint: string,
+    tokenExchangeEndpoint: string,
+    clientId: string,
+    clientSecret: string,
+    jwksEndpoint: string
 ) {
     try {
         const putOperation = new PutItemCommand({
             TableName: config.table,
             Item: marshall({
-                PK: `OrgID#${orgId}`,
-                SK: `OAuthConfig`,
-                endpoint,
+                PK: `ClientID#${clientId}`,
+                SK: `OrgID#${orgId}`,
+                authorizeEndpoint,
+                tokenEndpoint: tokenExchangeEndpoint,
                 clientId,
+                clientSecret,
+                jwks: jwksEndpoint,
                 entityType: 'OAuthConfig',
             }),
         });

@@ -1,5 +1,6 @@
 import { UnauthorizedClientError } from '@common/errors/oauth';
 import { Redirect } from '@common/responses';
+import { logger } from '@common/utils';
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { SafeUrl } from '../lib';
 import { AuthorizeValidator } from '../lib/authorize-validator';
@@ -21,12 +22,15 @@ async function authorizeHandler(event: APIGatewayProxyEvent) {
         scope = '',
     } = params;
 
+    logger.debug('authorize', { params });
+
     const validator = new AuthorizeValidator(
         client_id,
         redirect_uri,
         response_type
     );
     const hostName = await validator.validate();
+    logger.debug('hostName', { hostName });
 
     const responseType = response_type.trim().toLowerCase();
     if (!ALLOWED_GRANTS.includes(responseType)) {
@@ -40,7 +44,7 @@ async function authorizeHandler(event: APIGatewayProxyEvent) {
     // rather than the generic error page.
     safeHost.setUrl(hostName);
 
-    const { endpoint, clientId } = await getOauthConfig(hostName);
+    const { authorizeEndpoint, clientId } = await getOauthConfig(hostName);
 
     const authorizer = new Authorizer();
     authorizer.setClientId(clientId);
@@ -49,7 +53,8 @@ async function authorizeHandler(event: APIGatewayProxyEvent) {
     authorizer.setState(state);
     authorizer.setScope(scope);
 
-    const authUrl = authorizer.buildUrl(endpoint);
+    const authUrl = authorizer.buildUrl(authorizeEndpoint);
+    logger.debug('authUrl', { authUrl });
 
     return Redirect(authUrl);
 }

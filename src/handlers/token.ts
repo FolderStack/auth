@@ -1,9 +1,9 @@
 import { InvalidRequestError } from '@common/errors/oauth';
 import { UnsupportedGrantTypeError } from '@common/errors/oauth/authorize/unsupported-grant-type';
 import { Response } from '@common/responses';
-import { isValidUrl } from '@common/utils';
+import { isValidUrl, logger } from '@common/utils';
 import { APIGatewayProxyEvent } from 'aws-lambda';
-import fetch, { FormData } from 'node-fetch';
+import fetch from 'node-fetch';
 import { getOauthConfig } from '../lib/db';
 import { withErrorHandler } from '../lib/withErrorHandler';
 
@@ -18,6 +18,8 @@ async function token(event: APIGatewayProxyEvent) {
         refresh_token = '',
         redirect_uri = '',
     } = params;
+
+    logger.debug('token', { params });
 
     if (!client_id) {
         throw new InvalidRequestError.MissingParam('client_id');
@@ -53,28 +55,43 @@ async function token(event: APIGatewayProxyEvent) {
         throw new InvalidRequestError.MissingParam('refresh_token');
     }
 
-    const { endpoint, clientId, clientSecret } = await getOauthConfig(
+    const { tokenExchange, clientId, clientSecret } = await getOauthConfig(
         client_id
     );
 
-    const tokenExchBody = new FormData();
-    for (const key in params) {
-        const value = params[key];
-        if (value && value.length) {
-            tokenExchBody.set(key, value);
-        }
+    logger.debug('params', { params });
+
+    const postBody: Record<string, string> = {};
+
+    postBody.client_id = clientId;
+    postBody.client_secret = clientSecret;
+    postBody.grant_type = grantType;
+    postBody.redirect_uri = redirect_uri;
+
+    if (params.code) {
+        postBody.code = params.code;
     }
-    tokenExchBody.set('client_id', clientId);
-    tokenExchBody.set('client_secret', clientSecret);
+
+    if (params.refresh_token) {
+        postBody.refresh_token = refresh_token;
+    }
 
     try {
-        const oauthHost = new URL(endpoint);
-        const tokenRes = await fetch(`https://${oauthHost.host}/oauth/token`, {
+        logger.debug('token', {
+            tokenExchange,
+            postBody,
+        });
+
+        const tokenRes = await fetch(tokenExchange, {
             method: 'POST',
-            body: tokenExchBody,
+            body: JSON.stringify(postBody),
+            headers: {
+                'Content-Type': 'application/json',
+            },
         });
 
         const body = (await tokenRes.json()) as any;
+        logger.debug('token', { responseBody: body, tokenRes });
         if (typeof body === 'object') {
             return {
                 statusCode: tokenRes.status,
@@ -84,6 +101,8 @@ async function token(event: APIGatewayProxyEvent) {
             return Response(tokenRes.status);
         }
     } catch (err) {
+        console.log(err);
+        logger.warn({ err });
         return Response(500);
     }
 }

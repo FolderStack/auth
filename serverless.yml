@@ -57,7 +57,7 @@ custom:
                 sources:
                     - table: ${self:custom.table}
                       sources: [./test.seed.json]
-    table: "folderstack-${self:custom.currentStage}"
+    table: "folderstack-config-${self:custom.currentStage}"
 
 provider:
     name: aws
@@ -67,7 +67,7 @@ provider:
     environment:
         TABLE_NAME:
             Fn::ImportValue:
-                "FolderStack-Table-Name-Export-${self:custom.currentStage}"
+                "FolderStack-ConfigTable-Name-Export-${self:custom.currentStage}"
         AWS_NODEJS_CONNECTION_REUSE_ENABLED: '0'
         ENV: ${self:custom.currentStage}
         LOG_LEVEL: ${self:custom.logLevel, 'info'}
